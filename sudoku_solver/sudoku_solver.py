@@ -3,21 +3,21 @@
     Date: 2.12.2022
     Description: Building an auto soduku solver
 """
-import enum
+from time import time
 from typing import List
 
 from loguru import logger
 
 # Rows separated by commas
-EASY = (
-    "000030640030705800820096070000070296003429010298561407702900000000000064459000700"
-)
-# MEDIUM =
-# HARD =
+EASY =      "000030640030705800820096070000070296003429010298561407702900000000000064459000700"
+MEDIUM =    "009310520531706000027400000400070302000800006000003470000050000000007049074000601"
+HARD =      "700006004009000000020003810312000097000004026000200000040500000090300078000100200"
+EXPERT =    "000002000730050100010000530500040000342000000000860050900001000000430006000000800"
+EVIL =      "080105003000020000900000040000080002060070000004206030050603001000007000008000500"
 SOLVED = (
     "128653947973284165546179823435891672862735419719426358657948231394512786281367594"
 )
-PUZZLES = {"easy": EASY, "solved": SOLVED}
+PUZZLES = {"easy": EASY, "solved": SOLVED, "medium":MEDIUM, "hard":HARD, "expert":EXPERT,  "evil":EVIL}
 # TODO: create a function for random boards
 
 
@@ -25,10 +25,8 @@ def load_board(difficulty: str) -> List[List[int]]:
     """This function will load a sudoku board into the game."""
     # TODO: could allow for user input
     board = [[0 for _ in range(9)] for _ in range(9)]
-    if difficulty in PUZZLES:
-        puzzle = PUZZLES[difficulty]
-    else:
-        puzzle = PUZZLES["easy"]
+
+    puzzle = PUZZLES.get(difficulty, EASY)
 
     for row in range(9):
         for col in range(9):
@@ -43,6 +41,7 @@ def print_board(board):
         for column in row:
             print(column, end="")
         print()
+    print()
 
 
 def validate_board(board):
@@ -88,12 +87,12 @@ def validate_board(board):
 
 def guess_in_column(board, column, guess):
     """Checks to see if the guess is in the column"""
-    return any([board[row][column] == guess for row in range(9)])
+    return max([board[row][column] == guess for row in range(9)])
 
 
 def guess_in_row(board, row, guess):
     """Checks to see if the guess is in the row"""
-    return any([board[row][column] == guess for column in range(9)])
+    return max([board[row][column] == guess for column in range(9)])
 
 
 def guess_in_square(board, row, column, guess):
@@ -132,13 +131,8 @@ def solve(board):
     # logger.debug(print_board(board))
     open_space = find_empty_space(board)
 
-    if not open_space:
-        logger.warning("NO EMPTY SPACES FOUND")
-        if validate_board(board):
+    if not open_space and validate_board(board):
             return True, board
-        else:
-            logger.critical("Solver was not able to solve puzzle")
-            return False, board
     else:
         row, col = open_space
         # logger.debug(f"Empty space at ({row},{col})")
@@ -156,12 +150,16 @@ def solve(board):
     return False, board
 
 
-board = load_board("easy")
-print_board(board)
-status, board = solve(board)
+def solve_each():
+    for difficulty in PUZZLES:
+        board = load_board(difficulty)
+        start = time()
+        status, board = solve(board)
+        end = time()
+        if status:
+            print_board(board)
+            print(f"Solved {difficulty} Sudoku Puzzle (Time: {round(end-start,5)}s)!!!!")
+        else:
+            print("Failed to solve board")
 
-if status:
-    print("Solved Sudoku Puzzle!!!!")
-    print_board(board)
-else:
-    print("Failed to solve board")
+solve_each()
